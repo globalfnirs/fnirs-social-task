@@ -1,6 +1,4 @@
-# fNIRS Social Task
-
-## BRIGHT social task fNIRS analysis
+# BRIGHT social task fNIRS analysis
 
 Install MATLAB requirements:  
 *Download the [Homer2](https://www.nitrc.org/projects/homer2) toolbox.*
