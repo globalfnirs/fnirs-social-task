@@ -1,4 +1,4 @@
-# fnirs-toolkit
+# fNIRS Social Task
 
 ## BRIGHT social task fNIRS analysis
 
