@@ -1,0 +1,50 @@
+{
+    "5mo": {
+        "left frontal": [2, 5, 3, 8, 7],
+        "left anterior-temporal": [14, 10, 11, 13, 9],
+        "left posterior-temporal": [12, 17, 16, 19, 15, 18],
+        "right frontal": [20, 23, 22, 27, 26],
+        "right anterior-temporal": [33, 29, 30, 32, 28],
+        "right posterior-temporal": [31, 36, 35, 38, 34, 37]
+    },
+    "8mo": {
+        "left frontal": [2, 5, 3, 8, 7],
+        "left anterior-temporal": [14, 10, 11, 13, 9],
+        "left posterior-temporal": [12, 17, 16, 19, 15, 18],
+        "right frontal": [20, 23, 22, 27, 26],
+        "right anterior-temporal": [29, 30, 32, 28],
+        "right posterior-temporal": [31, 36, 35, 38, 34, 37]
+    },
+    "12mo": {
+        "left frontal": [2, 5, 3, 8, 7],
+        "left anterior-temporal": [14, 10, 11, 13, 9],
+        "left posterior-temporal": [12, 17, 16, 19, 15, 18],
+        "right frontal": [20, 23, 22, 27, 26, 25],
+        "right anterior-temporal": [29, 30, 32, 28],
+        "right posterior-temporal": [31, 36, 35, 38, 34, 37]
+    },
+    "18mo": {
+        "left frontal": [2, 5, 3, 8, 7],
+        "left anterior-temporal": [14, 10, 11, 13, 9],
+        "left posterior-temporal": [12, 17, 16, 19, 15, 18],
+        "right frontal": [20, 23, 22, 27, 26, 25],
+        "right anterior-temporal": [33, 29, 30, 32, 28],
+        "right posterior-temporal": [31, 36, 35, 38, 34, 37]
+    },
+    "24mo": {
+        "left frontal": [2, 5, 3, 8, 7],
+        "left anterior-temporal": [10, 11, 13, 9],
+        "left posterior-temporal": [12, 17, 16, 19, 15, 18],
+        "right frontal": [20, 23, 22, 27, 26, 25],
+        "right anterior-temporal": [33, 29, 30, 32, 28],
+        "right posterior-temporal": [31, 36, 35, 38, 34, 37]
+    },
+    "60mo": {
+        "left frontal": [2, 5, 3, 8, 7],
+        "left anterior-temporal": [10, 11, 13, 9],
+        "left posterior-temporal": [12, 17, 16, 19, 15, 18],
+        "right frontal": [20, 23, 22, 27, 26, 25],
+        "right anterior-temporal": [33, 29, 30, 32, 28],
+        "right posterior-temporal": [31, 36, 35, 38, 34, 37]
+    }
+}
