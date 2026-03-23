@@ -147,7 +147,7 @@ for nsub = 1:length(sub)
     %% 9- Reject trials based on looking time
     lt_filename = ['../autocoder/' cell2mat(name_split(1)) '_LT_Autocoder.mat'];
     
-    [data.s, data.LTFile] = JB_reject_looking_time(data, lt_filename, percLook);
+    [data.s, data.LTFile] = JB_looking_time(data, lt_filename, percLook);
 
     %% Save processed data
     save(['../processed/', cell2mat(name_split(1)), '.nirs'], '-struct', 'data')
