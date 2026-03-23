@@ -114,7 +114,7 @@ for i_age, age in enumerate(AGES):
         if id not in grand_avg_ct_dict.keys():
             raise Exception(f"{id} not in the ID dictionary")
         grand_avg_ct_dict[id][i_age] = grand_avg_ct[i_subj]
-        for i_roi, roi in enumerate(roi_list):            
+        for i_roi, roi in enumerate(roi_list):
             for i, chroma in enumerate(['hbo', 'hbr']):
                 df_rows.append([
                     id, age, 'V', roi, chroma,

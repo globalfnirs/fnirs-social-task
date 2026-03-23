@@ -399,7 +399,7 @@ def plot_hrf(grand_avg, condition, activations, baseline=2, dummies=True):
 
     dummies : bool
         Whether the data should include dummy channels (when channels have been
-        removed from the preprocessed data).     
+        removed from the preprocessed data).
     """
     # Add dummy channels
     if dummies is True:
