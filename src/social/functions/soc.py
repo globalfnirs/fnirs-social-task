@@ -9,6 +9,7 @@ import matplotlib.colors as mcolors
 import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import scipy.io
 import seaborn as sns
 
@@ -1063,36 +1064,41 @@ def selective_table(df, subj_list, cond, feature="Window average"):
 
     feature : str
         Name of the feature column to plot. Defaults to ``"Window average"``.
+
+    Returns
+    -------
+    df_out : pandas.DataFrame
+        DataFrame containing the results.
     """
     sub_df = df[df['Channel type'] == 'hbo']
     sub_df = sub_df[sub_df['ID'].isin(subj_list)]
     sub_v = sub_df[sub_df['Condition'] == 'V']
     sub_n = sub_df[sub_df['Condition'] == 'N']
     sub_df = sub_df[sub_df['Condition'] == cond]
-    fw = open('../../outputs/selective_sustained.csv', 'w')
-    fw.write("ID,5mo,8mo,12mo,18mo,24mo,60mo\n")
+    rows = []
     for subj in subj_list:
-        fw.write(f"{subj}")
+        row = {'ID': subj}
         d = sub_df.query(f"ID == '{subj}' & ROI.str.contains('anterior')")
         d_v = sub_v.query(f"ID == '{subj}' & ROI.str.contains('anterior')")
         d_n = sub_n.query(f"ID == '{subj}' & ROI.str.contains('anterior')")
         for age in [5, 8, 12, 18, 24, 60]:
-            fw.write(",")
-            print(d.query(f"`Age (months)` == '{age}'")[feature].mean())
             if (
                 d.query(f"`Age (months)` == '{age}'")[feature].mean() > 0
                 and d_v.query(f"`Age (months)` == '{age}'")[feature].mean() > 0
             ):
-                fw.write("V")
+                row[f"{age}mo"] = "V"
             elif (
                 d.query(f"`Age (months)` == '{age}'")[feature].mean() < 0
                 and d_n.query(f"`Age (months)` == '{age}'")[feature].mean() > 0
             ):
-                fw.write("N")
+                row[f"{age}mo"] = "N"
             elif (
                 np.isnan(d.query(f"`Age (months)` == '{age}'")[feature].mean())
             ):
-                fw.write("Missing")
+                row[f"{age}mo"] = "Missing"
             else:
-                fw.write("None")
-        fw.write("\n")
+                row[f"{age}mo"] = "None"
+        rows.append(row)
+
+    df_out = pd.DataFrame(rows)
+    return df_out
