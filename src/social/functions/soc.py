@@ -827,6 +827,32 @@ def stats_ttp(time_to_peaks, condition_a, condition_b):
 # -----------------------------------------------------------------------------
 def selective_paired(df, roi_list, ages, subj_list, type, ylim,
                      feature="Window average"):
+    """
+    Plot paired selectivity data for different ROIs.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame containing the data to plot.
+
+    roi_list : list of str
+        List of ROI names to include in the plot.
+
+    ages : list of str
+        List of age groups to include in the plot.
+
+    subj_list : list of str
+        List of subject IDs to include in the plot.
+
+    type : str
+        Type of channel ('hbo' or 'hbr').
+
+    ylim : tuple of float
+        Y-axis limits for the plot.
+
+    feature : str
+        Name of the feature column to plot. Defaults to ``"Window average"``.
+    """
     sub_df = df[df['Condition'].isin(['N', 'V'])]
     sub_df = sub_df[sub_df['Channel type'] == type]
     sub_df = sub_df[sub_df['ID'].isin(subj_list)]
@@ -897,6 +923,26 @@ def selective_paired(df, roi_list, ages, subj_list, type, ylim,
 
 def selective_trajectories(df, subj_list, type, ylim,
                            feature="Window average"):
+    """
+    Plot selectivity trajectories for different age groups.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame containing the data to plot.
+
+    subj_list : list of str
+        List of subject IDs to include in the plot.
+
+    type : str
+        Type of channel ('hbo' or 'hbr').
+
+    ylim : tuple of float
+        Y-axis limits for the plot.
+
+    feature : str, optional
+        Name of the feature column to plot. Defaults to ``"Window average"``.
+    """
     # Get selectivity groups using HbO anterior temporal
     sub_df = df[df['Channel type'] == 'hbo']
     sub_df = sub_df[sub_df['ID'].isin(subj_list)]
@@ -1001,6 +1047,23 @@ def selective_trajectories(df, subj_list, type, ylim,
 
 
 def selective_table(df, subj_list, cond, feature="Window average"):
+    """
+    Generate a table of selectivity data for different age groups.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame containing the data to process.
+
+    subj_list : list of str
+        List of subject IDs to include in the table.
+
+    cond : str
+        Condition to filter the data by.
+
+    feature : str
+        Name of the feature column to plot. Defaults to ``"Window average"``.
+    """
     sub_df = df[df['Channel type'] == 'hbo']
     sub_df = sub_df[sub_df['ID'].isin(subj_list)]
     sub_v = sub_df[sub_df['Condition'] == 'V']
