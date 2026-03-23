@@ -175,3 +175,5 @@ cython_debug/
 
 # Custom
 assets/ids.json
+assets/anthrops_60mo.csv
+assets/anthrops.csv
