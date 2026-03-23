@@ -6,11 +6,12 @@ Author: Johann Benerradi
 
 import glob
 import matplotlib.colors as mcolors
+import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io
+import seaborn as sns
 
-from pathlib import Path
 from scipy import stats
 from statsmodels.stats import multitest
 
@@ -18,6 +19,9 @@ from statsmodels.stats import multitest
 CONFIDENCE = 0.05
 
 
+# -----------------------------------------------------------------------------
+# Loading functions
+# -----------------------------------------------------------------------------
 def load_results_60mo(path, cond_list):
     """
     Get grand average from processed data results.
@@ -41,10 +45,17 @@ def load_results_60mo(path, cond_list):
 
     rejected : list of tuples
         List of rejected subjects with reason.
+
+    all_n_chs : list of int
+        List of number of channels for each participant.
+
+    all_n_trials : list of int
+        List of number of trials for each participant.
     """
     result_files = glob.glob(path + '/*.mat')
 
-    grand_avg = np.empty((0, len(cond_list), 34, 2, 221))  # block average waveforms: (subjects, conditions, channels, chromophores, timepoints)
+    # Block average: (subjects, conditions, channels, chromophores, timepoints)
+    grand_avg = np.empty((0, len(cond_list), 34, 2, 221))
     subj_ids = []
     rejected = []
 
@@ -53,6 +64,7 @@ def load_results_60mo(path, cond_list):
     c_trials = 0
 
     all_n_chs = []
+    all_n_trials = []
 
     for result_file in result_files:
         subj_id = result_file.split('sub-')[-1].split('_')[0]
@@ -67,35 +79,40 @@ def load_results_60mo(path, cond_list):
         for cond in cond_list:
             cond_indices.append(cond_names.index(cond))
 
-        # Exclude subject if no looking time autocoder data:
+        # Exclude if no looking time autocoder data:
         reason = None
         if not np.squeeze(mat_file['results']['LTFile'][0, 0]):
             exclude = True
             reason = 'trials'
             c_ltfile += 1
-            # print(f"Subject {result_file} rejected (no looking time autocoder data)")
 
-        # Exclude subject if less than 3 trials for any condition ('S', 'V' or 'N'):
-        if np.any(np.squeeze(mat_file['results']['nTrials'][0, 0])[cond_indices] < 3):
+        # Exclude if less than 3 trials for any condition ('S', 'V' or 'N'):
+        if np.any(
+            np.squeeze(mat_file['results']['nTrials'][0, 0])[cond_indices] < 3
+        ):
             exclude = True
             reason = 'trials'
             c_trials += 1
-            # print(f"Subject {result_file} rejected (number of trial remaining < 3 for any of the conditions)")
+        else:
+            trials = np.squeeze(
+                mat_file['results']['nTrials'][0, 0]
+            )[cond_indices]
+            n_trials = np.mean(trials)
 
         # Extract data:
-        avg = np.squeeze(mat_file['results']['dcAvg'][0, 0])[:, :2, :, cond_indices]
+        avg = np.squeeze(
+            mat_file['results']['dcAvg'][0, 0]
+        )[:, :2, :, cond_indices]
         avg = np.transpose(avg)[np.newaxis, :, :, :, :]
 
-        # Exclude subject if more than 40% of excluded channels:
+        # Exclude if more than 40% of excluded channels:
         if np.isnan(avg.mean(axis=(0, 1, 3, 4))).sum() > 0.4*avg.shape[2]:
             exclude = True
             if not reason:
                 reason = 'channels'
             c_channels += 1
-            # print(f"Subject {result_file} rejected (more than 40% channels excluded)")
         else:
             n_chs = 34 - np.isnan(avg.mean(axis=(0, 1, 3, 4))).sum()
-            all_n_chs.append(n_chs)
 
         # Exclude subject:
         if exclude:
@@ -105,15 +122,14 @@ def load_results_60mo(path, cond_list):
         # Append all subjects:
         grand_avg = np.append(grand_avg, avg, axis=0)
         subj_ids.append(subj_id)
+        all_n_chs.append(n_chs)
+        all_n_trials.append(n_trials)
 
     print(f"N={grand_avg.shape[0]}")
-    # print(f"\tNo looking time file: {c_ltfile} subjects")
-    # print(f"\tNot enough trials: {c_trials} subjects")
-    # print(f"\tBad channel quality: {c_channels} subjects")
 
-    grand_avg *= 1e6
+    grand_avg *= 1e6  # µM
 
-    return grand_avg, subj_ids, rejected, all_n_chs
+    return grand_avg, subj_ids, rejected, all_n_chs, all_n_trials
 
 
 def load_results_infancy(path, cond_list):
@@ -139,60 +155,98 @@ def load_results_infancy(path, cond_list):
 
     rejected : list of tuples
         List of rejected subjects with reason.
+
+    all_n_chs : list of int
+        List of number of channels for each participant.
+
+    all_n_trials : list of int
+        List of number of trials for each participant.
     """
-    grand_avg = np.empty((0, len(cond_list), 34, 2, 221))  # block average waveforms: (subjects, conditions, channels, chromophores, timepoints)
+    # Block average: (subjects, conditions, channels, chromophores, timepoints)
+    grand_avg = np.empty((0, len(cond_list), 34, 2, 221))
     subj_ids = []
 
-    # Load group results:
+    # Load group results
     mat_file_vn = scipy.io.loadmat(f"{path}/V%3EN/groupResults.mat")
     mat_file_sc = scipy.io.loadmat(f"{path}/S%3EC/groupResults.mat")
 
-    # Keep subjects with at least 3 trials in any condition:
-    names_vn = [np.squeeze(name).tolist() for name in np.squeeze(mat_file_vn['group']['subjs'][0, 0]['name'][0, :])]
-    names_sc = [np.squeeze(name).tolist() for name in np.squeeze(mat_file_sc['group']['subjs'][0, 0]['name'][0, :])]
-    subj_list = [(i, name) for i, name in enumerate(names_vn) if name in names_sc]
-    rejected = [(name.split('_')[0], 'trials') for name in names_vn if name not in names_sc]
-    rejected += [(name.split('_')[0], 'trials') for name in names_sc if name not in names_vn]
+    # Keep subjects with at least 3 trials in any condition
+    names_vn = [np.squeeze(name).tolist() for name in np.squeeze(
+        mat_file_vn['group']['subjs'][0, 0]['name'][0, :]
+    )]
+    names_sc = [np.squeeze(name).tolist() for name in np.squeeze(
+        mat_file_sc['group']['subjs'][0, 0]['name'][0, :]
+    )]
+    subj_list = [(i, name) for i, name in enumerate(names_vn)
+                 if name in names_sc]
+    rejected = [(name.split('_')[0], 'trials') for name in names_vn
+                if name not in names_sc]
+    rejected += [(name.split('_')[0], 'trials') for name in names_sc
+                 if name not in names_vn]
 
-    # Prepare condition reordering:
-    cn = np.squeeze(mat_file_vn['group']['conditions'][0, 0]['CondNamesAct'][0, 0])
+    # Prepare condition reordering
+    cn = np.squeeze(
+        mat_file_vn['group']['conditions'][0, 0]['CondNamesAct'][0, 0]
+    )
     cond_names = [np.squeeze(c).tolist() for c in cn]
     cond_indices = []
     for cond in cond_list:
         cond_indices.append(cond_names.index(cond))
 
-    # Prepare channel reordering:
-    ch_indices = np.array([34, 23, 35, 14, 24, 36, 11, 15, 25, 3, 12, 16, 1, 4, 13, 2, 5, 29, 26, 30, 20, 27, 31, 17, 21, 28, 8, 18, 22, 6, 9, 19, 7, 10]) - 1
+    # Prepare channel reordering
+    ch_indices = np.array([
+        34, 23, 35, 14, 24, 36, 11, 15, 25, 3, 12, 16, 1, 4, 13, 2, 5, 29, 26,
+        30, 20, 27, 31, 17, 21, 28, 8, 18, 22, 6, 9, 19, 7, 10
+    ]) - 1
 
     all_n_chs = []
+    all_n_trials = []
 
     for i, name in subj_list:
         subj_id = name.split('_')[0]
-        # subj_code = '_'.join(name.split('_')[1:]).split('_BRIGHT')[0]
 
-        # Extract data:
-        avg = np.squeeze(mat_file_vn['group']['subjs'][0, 0]['procResult'][0, i]['dcAvg'][0, 0])[:, :2, :, cond_indices]
+        # Extract data
+        avg = np.squeeze(
+            mat_file_vn['group']['subjs'][0, 0]['procResult'][0, i][
+                'dcAvg'
+            ][0, 0]
+        )[:, :2, :, cond_indices]
         avg = np.transpose(avg[:, :, ch_indices, :])[np.newaxis, :, :, :, :]
 
-        # Exclude subject if more than 40% of excluded channels:
+        # Extract number of trials per condition
+        trials = mat_file_vn['group']['subjs'][0, 0]['procResult'][0, i][
+            'nTrials'
+        ][0, 0]
+        trials = trials[~np.all(trials == 0, axis=1)]
+        if np.all(trials == trials[0], axis=1).all():
+            trials = trials[0, cond_indices]  # select all except baseline
+            n_trials = np.mean(trials)
+        else:
+            raise Exception('number of trials not matching for all channels')
+
+        # Exclude if more than 40% of excluded channels:
         if np.isnan(avg.mean(axis=(0, 1, 3, 4))).sum() > 0.4*avg.shape[2]:
             rejected.append((subj_id, 'channels'))
             continue
         else:
             n_chs = 34 - np.isnan(avg.mean(axis=(0, 1, 3, 4))).sum()
-            all_n_chs.append(n_chs)
 
         # Append all subjects:
         grand_avg = np.append(grand_avg, avg, axis=0)
         subj_ids.append(subj_id)
+        all_n_chs.append(n_chs)
+        all_n_trials.append(n_trials)
 
     print(f"N={grand_avg.shape[0]}")
 
-    grand_avg *= 1e6
+    grand_avg *= 1e6  # µM
 
-    return grand_avg, subj_ids, rejected, all_n_chs
+    return grand_avg, subj_ids, rejected, all_n_chs, all_n_trials
 
 
+# -----------------------------------------------------------------------------
+# HRF functions
+# -----------------------------------------------------------------------------
 def window_average(grand_avg, window=[12, 16]):
     """
     Get average over a set time window.
@@ -213,7 +267,9 @@ def window_average(grand_avg, window=[12, 16]):
         Array of features for all subjects of shape (n_subjects, n_conditions,
         n_channels, n_chromophores).
     """
-    feature_grand_avg = grand_avg[:, :, :, :, int(window[0]*10+20):int(window[1]*10+20)].mean(axis=-1)
+    feature_grand_avg = grand_avg[
+        :, :, :, :, int(window[0]*10+20):int(window[1]*10+20)
+    ].mean(axis=-1)
 
     return feature_grand_avg
 
@@ -261,9 +317,9 @@ def analyse_act(feature_grand_avg, condition, fdr=True, dummies=True):
         activation (HbO and HbR both with same significant trend or both with
         no significant trend).
     """
-    p_values = np.empty((feature_grand_avg.shape[2], 2))  # (channels, chromophores)
-    t_values = np.empty((feature_grand_avg.shape[2], 2))  # (channels, chromophores)
-    trends = np.empty((feature_grand_avg.shape[2], 2))  # (channels, chromophores)
+    p_values = np.empty((feature_grand_avg.shape[2], 2))  # (channels, chromas)
+    t_values = np.empty((feature_grand_avg.shape[2], 2))  # (channels, chromas)
+    trends = np.empty((feature_grand_avg.shape[2], 2))  # (channels, chromas)
 
     for channel in range(feature_grand_avg.shape[2]):
         for chromophore in range(feature_grand_avg.shape[3]):
@@ -272,12 +328,14 @@ def analyse_act(feature_grand_avg, condition, fdr=True, dummies=True):
             samples = samples[~np.isnan(samples)]
             # Warning if parametric test assumptions not verified
             if len(samples) < 30:
-                print(f"Warning, only {len(samples)} sample(s) for channel No {channel+1}")
+                print(f"Warning, only {len(samples)} sample(s) "
+                      f"for channel No {channel+1}")
 
             # t-test
             if samples.mean() > 0:
                 trends[channel, chromophore] = 1
-                s_tt, p_tt = stats.ttest_1samp(samples, 0, alternative='greater')
+                s_tt, p_tt = stats.ttest_1samp(samples, 0,
+                                               alternative='greater')
             elif samples.mean() < 0:
                 trends[channel, chromophore] = -1
                 s_tt, p_tt = stats.ttest_1samp(samples, 0, alternative='less')
@@ -290,7 +348,9 @@ def analyse_act(feature_grand_avg, condition, fdr=True, dummies=True):
     if fdr:
         for chromophore in range(feature_grand_avg.shape[3]):
             # FDR correction at channel level
-            _, p_values[:, chromophore] = multitest.fdrcorrection(p_values[:, chromophore], alpha=CONFIDENCE)
+            _, p_values[:, chromophore] = multitest.fdrcorrection(
+                p_values[:, chromophore], alpha=CONFIDENCE
+            )
 
     for channel in range(trends.shape[0]):
         for chromophore in range(trends.shape[1]):
@@ -351,9 +411,11 @@ def plot_hrf(grand_avg, condition, activations, baseline=2, dummies=True):
     plt.rcParams["axes.prop_cycle"] = plt.cycler("color", plt.cm.tab20c.colors)
     fig, axes = plt.subplots(2, 2, figsize=(15, 8))
     fig.tight_layout(h_pad=4, w_pad=4)
-    axes[0, 0].set(title='HbO Right', xlabel='Time (sec)', ylabel='Hb concentration (uM)')
+    axes[0, 0].set(title='HbO Right', xlabel='Time (sec)',
+                   ylabel='Hb concentration (uM)')
     axes[0, 1].set(title='HbO Left', xlabel='Time (sec)')
-    axes[1, 0].set(title='HbR Right', xlabel='Time (sec)', ylabel='Hb concentration (uM)')
+    axes[1, 0].set(title='HbR Right', xlabel='Time (sec)',
+                   ylabel='Hb concentration (uM)')
     axes[1, 1].set(title='HbR Left', xlabel='Time (sec)')
 
     for channel in range(grand_avg.shape[2]):
@@ -364,17 +426,30 @@ def plot_hrf(grand_avg, condition, activations, baseline=2, dummies=True):
         else:
             col = 0
         for chromophore in range(grand_avg.shape[3]):
-            channel_average = np.nanmean(grand_avg[:, condition, channel, chromophore, :], axis=0)
+            channel_average = np.nanmean(
+                grand_avg[:, condition, channel, chromophore, :], axis=0
+            )
             if activations[channel] > 0:
-                axes[chromophore, col].plot(np.linspace(-baseline, 20.0, num=len(channel_average)), channel_average, label=f'Ch {str(channel+1)}', linestyle='solid')
+                axes[chromophore, col].plot(
+                    np.linspace(-baseline, 20.0, num=len(channel_average)),
+                    channel_average, label=f'Ch {str(channel+1)}',
+                    linestyle='solid'
+                )
             else:
-                axes[chromophore, col].plot(np.linspace(-baseline, 20.0, num=len(channel_average)), channel_average, label=f'Ch {str(channel+1)}', linestyle='dashed')
-            axes[chromophore, col].grid(which='major', color='#666666', linestyle='-')
+                axes[chromophore, col].plot(
+                    np.linspace(-baseline, 20.0, num=len(channel_average)),
+                    channel_average, label=f'Ch {str(channel+1)}',
+                    linestyle='dashed'
+                )
+            axes[chromophore, col].grid(which='major', color='#666666',
+                                        linestyle='-')
             axes[chromophore, col].minorticks_on()
-            axes[chromophore, col].grid(which='minor', color='#999999', linestyle='-', alpha=0.2)
+            axes[chromophore, col].grid(which='minor', color='#999999',
+                                        linestyle='-', alpha=0.2)
             axes[chromophore, col].margins(x=0)
             axes[chromophore, col].set_ylim(-0.64, 1.2)
-            axes[1, col].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5)
+            axes[1, col].legend(loc='upper center',
+                                bbox_to_anchor=(0.5, -0.15), ncol=5)
     print("Solid line = significant activation")
     print("Dashed line = no significant activation")
     plt.show()
@@ -429,23 +504,28 @@ def analyse_contrast(feature_grand_avg, condition_a, condition_b, fdr=True,
         activation (HbO and HbR both with same significant trend or both with
         no significant trend).
     """
-    p_values = np.empty((feature_grand_avg.shape[2], 2))  # (channels, chromophores)
-    t_values = np.empty((feature_grand_avg.shape[2], 2))  # (channels, chromophores)
-    trends = np.empty((feature_grand_avg.shape[2], 2))  # (channels, chromophores)
+    p_values = np.empty((feature_grand_avg.shape[2], 2))  # (channels, chromas)
+    t_values = np.empty((feature_grand_avg.shape[2], 2))  # (channels, chromas)
+    trends = np.empty((feature_grand_avg.shape[2], 2))  # (channels, chromas)
 
     for channel in range(feature_grand_avg.shape[2]):
         for chromophore in range(feature_grand_avg.shape[3]):
-            contrast = feature_grand_avg[:, condition_a, channel, chromophore] - feature_grand_avg[:, condition_b, channel, chromophore]
+            contrast = (
+                feature_grand_avg[:, condition_a, channel, chromophore]
+                - feature_grand_avg[:, condition_b, channel, chromophore]
+            )
             # Get only good channels
             samples = contrast[~np.isnan(contrast)]
             # Warning if parametric test assumptions not verified
             if len(samples) < 30:
-                print(f"Warning, only {len(samples)} sample(s) for channel No {channel+1}")
+                print(f"Warning, only {len(samples)} sample(s) "
+                      f"for channel No {channel+1}")
 
             # t-test
             if samples.mean() > 0:
                 trends[channel, chromophore] = 1
-                s_tt, p_tt = stats.ttest_1samp(samples, 0, alternative='greater')
+                s_tt, p_tt = stats.ttest_1samp(samples, 0,
+                                               alternative='greater')
             elif samples.mean() < 0:
                 trends[channel, chromophore] = -1
                 s_tt, p_tt = stats.ttest_1samp(samples, 0, alternative='less')
@@ -458,7 +538,9 @@ def analyse_contrast(feature_grand_avg, condition_a, condition_b, fdr=True,
     if fdr:
         for chromophore in range(feature_grand_avg.shape[3]):
             # FDR correction at channel level
-            _, p_values[:, chromophore] = multitest.fdrcorrection(p_values[:, chromophore], alpha=CONFIDENCE)
+            _, p_values[:, chromophore] = multitest.fdrcorrection(
+                p_values[:, chromophore], alpha=CONFIDENCE
+            )
 
     for channel in range(trends.shape[0]):
         for chromophore in range(trends.shape[1]):
@@ -506,7 +588,7 @@ def get_no_act(activations):
     return no_act_chs
 
 
-def topo_overlay(values, save_path=None):
+def topo_overlay(values, color="#8b1f2b"):
     """
     Overlay channel results on topo maps.
 
@@ -515,14 +597,14 @@ def topo_overlay(values, save_path=None):
     values: numpy array
         List of values to overlay on the topo, one for each channel.
 
-    save_path : str
-        Path of the file to save the topo maps.
+    color : str
+        Color to use for significant channels.
     """
-    hex_color = '#8b1f2b'  # Mustard: eb9235, Burgundy: 8b1f2b
+    hex_color = color
     rgb_color = mcolors.hex2color(hex_color)
     colors = [(1, 1, 1), rgb_color]
-    cmap = mcolors.LinearSegmentedColormap.from_list('custom_cmap', colors, N=256)
-    # cmap = plt.get_cmap('YlOrRd')
+    cmap = mcolors.LinearSegmentedColormap.from_list('custom_cmap', colors,
+                                                     N=256)
 
     ch_pos = np.array([
         [None, None], [376, 322], [444, 260], [None, None], [412, 292],
@@ -537,12 +619,14 @@ def topo_overlay(values, save_path=None):
 
     i_front = np.array([2, 3, 5, 8, 20, 22, 23, 27]) - 1
     i_left = np.array([6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]) - 1
-    i_right = np.array([25, 26, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38]) - 1
+    i_right = np.array(
+        [25, 26, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38]
+    ) - 1
 
     colors = [value*0.5 for value in values]
     c_list = np.array([cmap(color) for color in colors])
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    _, axes = plt.subplots(1, 3, figsize=(15, 5))
 
     # Left
     img_path = '../../assets/left.png'
@@ -552,7 +636,8 @@ def topo_overlay(values, save_path=None):
                     s=200, linewidths=2, edgecolors='k')
     axes[2].axis('off')
     for i in i_left:
-        axes[2].annotate(i+1, ch_pos[i], ha='center', va='center', color='w', fontsize=8)
+        axes[2].annotate(i+1, ch_pos[i], ha='center', va='center', color='w',
+                         fontsize=8)
 
     # Front
     img_path = '../../assets/front.png'
@@ -562,7 +647,8 @@ def topo_overlay(values, save_path=None):
                     s=200, linewidths=2, edgecolors='k')
     axes[1].axis('off')
     for i in i_front:
-        axes[1].annotate(i+1, ch_pos[i], ha='center', va='center', color='w', fontsize=8)
+        axes[1].annotate(i+1, ch_pos[i], ha='center', va='center', color='w',
+                         fontsize=8)
 
     # Right
     img_path = '../../assets/right.png'
@@ -572,18 +658,13 @@ def topo_overlay(values, save_path=None):
                     s=200, linewidths=2, edgecolors='k')
     axes[0].axis('off')
     for i in i_right:
-        axes[0].annotate(i+1, ch_pos[i], ha='center', va='center', color='w', fontsize=8)
+        axes[0].annotate(i+1, ch_pos[i], ha='center', va='center', color='w',
+                         fontsize=8)
 
-    # fig.colorbar(plt.cm.ScalarMappable(cmap=cmap), ax=axes.ravel().tolist())
-
-    if save_path:
-        plt.savefig(save_path, bbox_inches='tight')
-        plt.close()
-    else:
-        plt.show()
+    plt.show()
 
 
-def topo_overlay_roi(values, save_path=None):
+def topo_overlay_roi(values):
     """
     Overlay channel results on topo maps.
 
@@ -600,7 +681,6 @@ def topo_overlay_roi(values, save_path=None):
     colors = [(1, 1, 1), rgb_color]
     cmap = mcolors.LinearSegmentedColormap.from_list('custom_cmap', colors,
                                                      N=256)
-    # cmap = plt.get_cmap('YlOrRd')
 
     ch_pos = np.array([
         [428, 294], [231, 336], [378, 308],
@@ -614,7 +694,7 @@ def topo_overlay_roi(values, save_path=None):
     colors = [value*0.5 for value in values]
     c_list = np.array([cmap(color) for color in colors])
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    _, axes = plt.subplots(1, 3, figsize=(15, 5))
 
     # Left
     img_path = '../../assets/left.png'
@@ -640,11 +720,7 @@ def topo_overlay_roi(values, save_path=None):
                     s=600, linewidths=2, edgecolors='k', marker=',')
     axes[0].axis('off')
 
-    if save_path:
-        plt.savefig(save_path, bbox_inches='tight')
-        plt.close()
-    else:
-        plt.show()
+    plt.show()
 
 
 def get_info_peaks(grand_avg, type="hbo", baseline=2):
@@ -683,7 +759,10 @@ def get_info_peaks(grand_avg, type="hbo", baseline=2):
         time_to_peaks = np.argmin(grand_avg_mean[:, :, 1, start:], axis=-1)
         magnitudes = np.min(grand_avg_mean[:, :, 1, start:], axis=-1)
     elif type == "hbdiff":
-        hbdiff = grand_avg_mean[:, :, 0, start:] - grand_avg_mean[:, :, 1, start:]
+        hbdiff = (
+            grand_avg_mean[:, :, 0, start:]
+            - grand_avg_mean[:, :, 1, start:]
+        )
         time_to_peaks = np.argmax(hbdiff, axis=-1)
         magnitudes = np.max(hbdiff, axis=-1)
 
@@ -721,16 +800,8 @@ def stats_ttp(time_to_peaks, condition_a, condition_b):
         positive difference, -1 for significant negative difference, 0 for
         neither.
     """
-    # _, p_shap = stats.shapiro(time_to_peaks[:, condition_a])
-    # if p_shap < 0.05:
-    #     print("Not normal")
-    # _, p_shap = stats.shapiro(time_to_peaks[:, condition_b])
-    # if p_shap < 0.05:
-    #     print("Not normal")
-
     contrast = time_to_peaks[:, condition_a] - time_to_peaks[:, condition_b]
 
-    # Warning if parametric test assumptions not verified
     if len(contrast) < 30:
         print(f"Warning, only {len(contrast)} sample(s) for the contrast")
 
@@ -751,7 +822,214 @@ def stats_ttp(time_to_peaks, condition_a, condition_b):
     return p_tt, s_tt, trend
 
 
-def paired_ttest(a, b):
-    results = scipy.stats.ttest_rel(a, b, nan_policy='omit')
-    t_values = results[0]
-    return t_values
+# -----------------------------------------------------------------------------
+# Selectivity functions
+# -----------------------------------------------------------------------------
+def selective_paired(df, roi_list, ages, subj_list, type, ylim,
+                     feature="Window average"):
+    sub_df = df[df['Condition'].isin(['N', 'V'])]
+    sub_df = sub_df[sub_df['Channel type'] == type]
+    sub_df = sub_df[sub_df['ID'].isin(subj_list)]
+    fig, axes = plt.subplots(3, 2, figsize=(20, 20))
+    for i_roi, roi in enumerate(roi_list):
+        df_roi = sub_df[sub_df['ROI'] == roi]
+        axes.flat[i_roi].title.set_text(roi.capitalize())
+
+        # Plot points
+        sns.stripplot(data=df_roi, x="Age (months)", y=feature,
+                      hue="Condition", dodge=True, alpha=.45, legend=True,
+                      order=['5', '8', '12', '18', '24', '60'],
+                      hue_order=['N', 'V'], ax=axes.flat[i_roi],
+                      palette=['green', 'purple'])
+
+        # Plot links
+        for i_age, age in enumerate(ages):
+            df_v = df_roi[(df_roi['Age (months)'] == age[:-2])
+                          & (df_roi['Condition'] == 'V')]
+            df_n = df_roi[(df_roi['Age (months)'] == age[:-2])
+                          & (df_roi['Condition'] == 'N')]
+            df_v, df_n = df_v.dropna(), df_n.dropna()
+
+            locs1 = axes.flat[i_roi].get_children()[i_age*2].get_offsets()
+            locs2 = axes.flat[i_roi].get_children()[i_age*2+1].get_offsets()
+
+            if not list(locs1[:, 1]) == list(df_n[feature]):
+                raise Exception('DataFrame and figure not matching')
+            if not list(locs2[:, 1]) == list(df_v[feature]):
+                raise Exception('DataFrame and figure not matching')
+
+            for i in range(locs1.shape[0]):
+                x, y = [locs1[i, 0], locs2[i, 0]], [locs1[i, 1], locs2[i, 1]]
+                axes.flat[i_roi].plot(x, y, color="black", alpha=0.25)
+
+        # Plot average marks
+        sns.pointplot(data=df_roi, x="Age (months)", y=feature,
+                      hue="Condition", dodge=.5 - .5 / 3,
+                      errorbar=None, markers="_", markersize=10,
+                      linestyle="none",
+                      order=['5', '8', '12', '18', '24', '60'],
+                      hue_order=['N', 'V'], ax=axes.flat[i_roi], zorder=1000,
+                      palette=['black', 'black'], legend=False,)
+        if i_roi < 2:
+            legend_handles = [
+                mlines.Line2D(
+                    [], [], color=color, marker='o', linestyle='None',
+                    markersize=5, label=label
+                )
+                for color, label in zip(
+                    ['green', 'purple'],
+                    ['Auditory non-social', 'Auditory social']
+                )
+            ]
+            axes.flat[i_roi].legend(handles=legend_handles, title='Condition',
+                                    loc='upper left')
+        else:
+            axes.flat[i_roi].legend().set_visible(False)
+        axes.flat[i_roi].set_ylabel("HbO response (µM)")
+        axes.flat[i_roi].set_ylim(*ylim)
+        axes.flat[i_roi].grid()
+        axes.flat[i_roi].set_axisbelow(True)
+        axes.flat[i_roi].grid(which='major', visible=True, color='silver',
+                              linewidth=1.)
+    plt.tight_layout(pad=3)
+    plt.show()
+
+
+def selective_trajectories(df, subj_list, type, ylim,
+                           feature="Window average"):
+    # Get selectivity groups using HbO anterior temporal
+    sub_df = df[df['Channel type'] == 'hbo']
+    sub_df = sub_df[sub_df['ID'].isin(subj_list)]
+    spec_map = {'5 mo': [], '8 mo': [], '12 mo': [], 'later': []}
+    sub_v = sub_df[sub_df['Condition'] == 'V']
+    sub_vn = sub_df[sub_df['Condition'] == 'V-N']
+    for subj in subj_list:
+        d = sub_vn.query(f"ID == '{subj}' & ROI.str.contains('anterior')")
+        d_v = sub_v.query(f"ID == '{subj}' & ROI.str.contains('anterior')")
+        if (
+            d.query("`Age (months)` == '5'")[feature].mean() > 0
+            and d_v.query("`Age (months)` == '5'")[feature].mean() > 0
+        ):
+            spec_map['5 mo'].append(subj)
+        elif (
+            d.query("`Age (months)` == '8'")[feature].mean() > 0
+            and d_v.query("`Age (months)` == '8'")[feature].mean() > 0
+        ):
+            spec_map['8 mo'].append(subj)
+        elif (
+            d.query("`Age (months)` == '12'")[feature].mean() > 0
+            and d_v.query("`Age (months)` == '12'")[feature].mean() > 0
+        ):
+            spec_map['12 mo'].append(subj)
+        else:
+            spec_map['later'].append(subj)
+
+    # Plot data (HbO or HbR)
+    sub_df = df[df['Channel type'] == type]
+    sub_df = sub_df[sub_df['ID'].isin(subj_list)]
+    _, axes = plt.subplots(2, 2, figsize=(20, 20))
+    colors = ['#674ea7ff', '#cc4125ff', "#ce9a00ff", '#34a853ff',
+              '#ff6d01ff', '#6d9eebff', "#6d9eebff"]
+
+    for i, age_spec in enumerate(spec_map.keys()):
+        df_roi = sub_df[sub_df['Condition'].isin(['V', 'N'])]
+        df_roi = df_roi.query("ROI.str.contains('anterior')")
+        df_roi['Age (months)'] = df_roi['Age (months)'].astype(float)
+        df_roi = df_roi[df_roi['Age (months)'] <= 60]
+        df_roi = df_roi[df_roi["ID"].isin(spec_map[age_spec])]
+        df_roi_kids = df_roi[df_roi['Age (months)'] == 60].copy()
+        df_roi_kids['Age (months)'] = df_roi_kids['Age (months)'] - 20
+        df_roi = df_roi[df_roi['Age (months)'] != 60].copy()
+
+        if age_spec == 'later':
+            axes.flat[i].title.set_text(
+                f"No auditory social selectivity by 12 mo "
+                f"(N={len(spec_map[age_spec])})"
+            )
+        else:
+            axes.flat[i].title.set_text(
+                f"First auditory social selectivity at "
+                f"{age_spec} (N={len(spec_map[age_spec])})"
+            )
+
+        # Plot points
+        sns.lineplot(data=df_roi, x="Age (months)", y=feature,
+                     hue='Condition', style='Condition',
+                     hue_order=['V', 'N'], style_order=['V', 'N'],
+                     palette=[colors[i], colors[i]], markers=["o", "^"],
+                     dashes=[(2, 0), (2, 2)], ax=axes.flat[i], errorbar='se',
+                     legend=True)
+        sns.pointplot(data=df_roi_kids, x="Age (months)", y=feature,
+                      hue='Condition', hue_order=['V', 'N'], dodge=0.5,
+                      palette=[colors[i], colors[i]], markers=["o", "^"],
+                      ax=axes.flat[i], errorbar='se', scale=0.8,
+                      native_scale=True, err_kws=dict(alpha=0.5), legend=False)
+        axes.flat[i].axhline(y=0, color='black', linewidth=2)
+        axes.flat[i].grid()
+        axes.flat[i].set_xlim(0, 45)
+        axes.flat[i].set_ylim(*ylim)
+        axes.flat[i].set_xlabel("Age at the session (months)")
+        axes.flat[i].set_ylabel("Anterior temporal HbO response (µM)")
+        axes.flat[i].set_xticks(np.arange(0, 45, 10))
+        labels = [item.get_text() for item in axes.flat[i].get_xticklabels()]
+        labels[-1] = '3-5 y'
+        axes.flat[i].set_xticklabels(labels)
+        axes.flat[i].axhspan(ylim[0], 0, facecolor='grey', alpha=0.25)
+        axes.flat[i].legend(loc='lower right')
+        handles, labels = axes.flat[i].get_legend_handles_labels()
+        proxy_white = plt.Rectangle((0, 0), 1, 1, fc='white', alpha=0.25,
+                                    ec='black', lw=1,
+                                    label='Social selectivity')
+        proxy_grey = plt.Rectangle((0, 0), 1, 1, fc='grey', alpha=0.25,
+                                   ec='black', lw=1,
+                                   label='No social selectivity')
+        all_handles = handles + [proxy_white, proxy_grey]
+        all_labels = labels + ['Activation', 'No activation']
+        new_labels = []
+        for label in all_labels:
+            if label == 'V':
+                new_labels.append('Vocal')
+            elif label == 'N':
+                new_labels.append('Non-vocal')
+            else:
+                new_labels.append(label)
+        axes.flat[i].legend(handles=all_handles, labels=new_labels,
+                            loc='lower right')
+        axes.flat[i].set_axisbelow(True)
+    plt.tight_layout(pad=3)
+    plt.show()
+
+
+def selective_table(df, subj_list, cond, feature="Window average"):
+    sub_df = df[df['Channel type'] == 'hbo']
+    sub_df = sub_df[sub_df['ID'].isin(subj_list)]
+    sub_v = sub_df[sub_df['Condition'] == 'V']
+    sub_n = sub_df[sub_df['Condition'] == 'N']
+    sub_df = sub_df[sub_df['Condition'] == cond]
+    fw = open('../../outputs/selective_sustained.csv', 'w')
+    fw.write("ID,5mo,8mo,12mo,18mo,24mo,60mo\n")
+    for subj in subj_list:
+        fw.write(f"{subj}")
+        d = sub_df.query(f"ID == '{subj}' & ROI.str.contains('anterior')")
+        d_v = sub_v.query(f"ID == '{subj}' & ROI.str.contains('anterior')")
+        d_n = sub_n.query(f"ID == '{subj}' & ROI.str.contains('anterior')")
+        for age in [5, 8, 12, 18, 24, 60]:
+            fw.write(",")
+            print(d.query(f"`Age (months)` == '{age}'")[feature].mean())
+            if (
+                d.query(f"`Age (months)` == '{age}'")[feature].mean() > 0
+                and d_v.query(f"`Age (months)` == '{age}'")[feature].mean() > 0
+            ):
+                fw.write("V")
+            elif (
+                d.query(f"`Age (months)` == '{age}'")[feature].mean() < 0
+                and d_n.query(f"`Age (months)` == '{age}'")[feature].mean() > 0
+            ):
+                fw.write("N")
+            elif (
+                np.isnan(d.query(f"`Age (months)` == '{age}'")[feature].mean())
+            ):
+                fw.write("Missing")
+            else:
+                fw.write("None")
+        fw.write("\n")
