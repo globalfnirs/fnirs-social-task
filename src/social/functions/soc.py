@@ -23,7 +23,7 @@ CONFIDENCE = 0.05
 # -----------------------------------------------------------------------------
 # Loading functions
 # -----------------------------------------------------------------------------
-def load_results_60mo(path, cond_list):
+def load_60mo(path, cond_list):
     """
     Get grand average from processed data results.
 
@@ -133,7 +133,7 @@ def load_results_60mo(path, cond_list):
     return grand_avg, subj_ids, rejected, all_n_chs, all_n_trials
 
 
-def load_results_infancy(path, cond_list):
+def load_infancy(path, cond_list):
     """
     Get grand average from processed data results.
 
@@ -1009,8 +1009,8 @@ def selective_trajectories(df, subj_list, type, ylim,
         sns.pointplot(data=df_roi_kids, x="Age (months)", y=feature,
                       hue='Condition', hue_order=['V', 'N'], dodge=0.5,
                       palette=[colors[i], colors[i]], markers=["o", "^"],
-                      ax=axes.flat[i], errorbar='se', scale=0.8,
-                      native_scale=True, err_kws=dict(alpha=0.5), legend=False)
+                      ax=axes.flat[i], errorbar='se', native_scale=True,
+                      err_kws=dict(alpha=0.5), legend=False)
         axes.flat[i].axhline(y=0, color='black', linewidth=2)
         axes.flat[i].grid()
         axes.flat[i].set_xlim(0, 45)
@@ -1047,7 +1047,7 @@ def selective_trajectories(df, subj_list, type, ylim,
     plt.show()
 
 
-def selective_table(df, subj_list, cond, feature="Window average"):
+def selective_table(df, subj_list, feature="Window average"):
     """
     Generate a table of selectivity data for different age groups.
 
@@ -1058,9 +1058,6 @@ def selective_table(df, subj_list, cond, feature="Window average"):
 
     subj_list : list of str
         List of subject IDs to include in the table.
-
-    cond : str
-        Condition to filter the data by.
 
     feature : str
         Name of the feature column to plot. Defaults to ``"Window average"``.
@@ -1074,7 +1071,7 @@ def selective_table(df, subj_list, cond, feature="Window average"):
     sub_df = sub_df[sub_df['ID'].isin(subj_list)]
     sub_v = sub_df[sub_df['Condition'] == 'V']
     sub_n = sub_df[sub_df['Condition'] == 'N']
-    sub_df = sub_df[sub_df['Condition'] == cond]
+    sub_df = sub_df[sub_df['Condition'] == 'V-N']
     rows = []
     for subj in subj_list:
         row = {'ID': subj}
