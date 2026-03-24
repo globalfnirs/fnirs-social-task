@@ -17,7 +17,7 @@ from statsmodels.genmod.bayes_mixed_glm import BinomialBayesMixedGLM
 AGES = ['5mo', '8mo', '12mo', '18mo', '24mo', '60mo']
 CONDS = ['V', 'N']
 
-plt.switch_backend('QtAgg')
+# plt.switch_backend('QtAgg')
 
 
 # -----------------------------------------------------------------------------
@@ -61,7 +61,7 @@ for i_age, age in enumerate(AGES):
     print(f'===============\n{age} session\n---------------')
 
     # Load epochs
-    path = f'../../../data/dataset_bright/soc/results/{age}/'
+    path = f'../../../data/results/{age}/'
     if age == '60mo':
         grand_avg, subj_ids, rejected, _, _ = soc.load_60mo(path, CONDS)
     else:
@@ -166,6 +166,9 @@ print(complete_subj_ids)
 
 # Histogram of number of age points
 sns.histplot(nz, discrete=True)
+plt.xlabel("Number of valid sessions")
+plt.ylabel("Number of participants")
+plt.show()
 
 # Print number of participants contributing to each ROI
 for key, value in roi_contribs.items():

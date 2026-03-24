@@ -8,9 +8,11 @@ Authors: Borja Blanco and Johann Benerradi
 clear; close all; clc
 
 %% Variables
-pathScripts = '[path to repository]/signal';
-pathHomer = '[path to MATLAB toolboxes]/homer2';
-pathData = '[path to dataset]/raw/60mo/nirs';
+currentFile = which(mfilename);
+[currentPath, ~, ~] = fileparts(currentFile);
+pathScripts = fullfile(currentPath, '..', 'signal');
+pathHomer = fullfile(currentPath, '..', '..', '..', 'homer2');
+pathData = fullfile(currentPath, '..', '..', '..', 'data', 'raw', '60mo', 'nirs');
 
 sf = 10;  % Hz
 
@@ -44,7 +46,7 @@ chDet = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
 
 %% Processing
-addpath(pathScripts)
+addpath(genpath(pathScripts))
 addpath(genpath(pathHomer))
 cd(pathData)
 sub = dir('*.nirs');

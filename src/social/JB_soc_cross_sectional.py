@@ -20,7 +20,7 @@ from statsmodels.formula.api import ols
 AGES = [5, 8, 12, 18, 24, 60]
 CONDS = ['S', 'V', 'N']
 
-plt.switch_backend('QtAgg')
+# plt.switch_backend('QtAgg')
 
 
 # -----------------------------------------------------------------------------
@@ -85,7 +85,7 @@ anthrop_table = pd.DataFrame(columns=[
 for i, age in enumerate(AGES):
     print(f'===============\n{age} mo session\n---------------')
     # Load block average data
-    path = f'../../../data/dataset_bright/soc/results/{age}mo/'
+    path = f'../../../data/results/{age}mo/'
     if age == 60:
         grand_avg, subj_ids, rejected, n_chs, n_trials = soc.load_60mo(
             path, CONDS
@@ -232,7 +232,6 @@ for cond in cond_legend:
     plt.title(f'{cond_legend[cond]}')
     plt.legend(bbox_to_anchor=(1, 1))
     plt.grid()
-    plt.axhline(0, color='black', linestyle='-', linewidth=1)
     plt.show()
 
 
