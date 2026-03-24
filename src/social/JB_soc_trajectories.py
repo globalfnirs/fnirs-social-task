@@ -157,8 +157,6 @@ for subj in all_subj_ids:
                                 axis=(1, 2, 3))) >= 3:
         complete_subj_ids.append(subj)
         print(~np.all(np.isnan(grand_avg_ct_dict[subj]), axis=(1, 2, 3)))
-    # if np.all(~np.all(np.isnan(grand_avg_ct_dict[subj]), axis=(1, 2, 3))):
-    #     complete_subj_ids.append(subj)
     for i_age, age in enumerate(AGES):
         for i_roi, roi in enumerate(roi_list):
             if ~np.all(np.isnan(grand_avg_ct_dict[subj][i_age][i_roi])):
