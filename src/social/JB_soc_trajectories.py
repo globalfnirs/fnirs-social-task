@@ -24,7 +24,7 @@ plt.switch_backend('QtAgg')
 # Setup
 # -----------------------------------------------------------------------------
 # Get ROI dict
-with open('../../assets/rois_new.json', 'r') as f:
+with open('../../assets/rois.json', 'r') as f:
     roi_json = json.load(f)
 
 # Start channel indices at 0 instead of 1

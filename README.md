@@ -1,10 +1,10 @@
 # BRIGHT social task fNIRS analysis
 
-Install MATLAB requirements:  
+**MATLAB requirements:**  
 *Download the [Homer2](https://www.nitrc.org/projects/homer2) toolbox.*
 
-Install Python requirements:  
-`pip install matplotlib numpy pandas scipy seaborn statsmodels`
+**Python requirements:**  
+`pip install matplotlib numpy pandas scipy seaborn statsmodels PyQt6`
 
 Scripts:
 - `src/signal/JB_soc_preprocessing.m` social task fNIRS preprocessing
