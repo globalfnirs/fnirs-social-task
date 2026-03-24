@@ -630,7 +630,7 @@ def topo_overlay(values, color="#8b1f2b"):
     _, axes = plt.subplots(1, 3, figsize=(15, 5))
 
     # Left
-    img_path = '../../assets/left.png'
+    img_path = '../assets/left.png'
     im = plt.imread(img_path)
     axes[2].imshow(im, extent=[0, 600, 0, 600])
     axes[2].scatter(ch_pos[i_left, 0], ch_pos[i_left, 1], c=c_list[i_left],
@@ -641,7 +641,7 @@ def topo_overlay(values, color="#8b1f2b"):
                          fontsize=8)
 
     # Front
-    img_path = '../../assets/front.png'
+    img_path = '../assets/front.png'
     im = plt.imread(img_path)
     axes[1].imshow(im, extent=[0, 600, 0, 600])
     axes[1].scatter(ch_pos[i_front, 0], ch_pos[i_front, 1], c=c_list[i_front],
@@ -652,7 +652,7 @@ def topo_overlay(values, color="#8b1f2b"):
                          fontsize=8)
 
     # Right
-    img_path = '../../assets/right.png'
+    img_path = '../assets/right.png'
     im = plt.imread(img_path)
     axes[0].imshow(im, extent=[0, 600, 0, 600])
     axes[0].scatter(ch_pos[i_right, 0], ch_pos[i_right, 1], c=c_list[i_right],
@@ -698,7 +698,7 @@ def topo_overlay_roi(values):
     _, axes = plt.subplots(1, 3, figsize=(15, 5))
 
     # Left
-    img_path = '../../assets/left.png'
+    img_path = '../assets/left.png'
     im = plt.imread(img_path)
     axes[2].imshow(im, extent=[0, 600, 0, 600])
     axes[2].scatter(ch_pos[i_left, 0], ch_pos[i_left, 1], c=c_list[i_left],
@@ -706,7 +706,7 @@ def topo_overlay_roi(values):
     axes[2].axis('off')
 
     # Front
-    img_path = '../../assets/front.png'
+    img_path = '../assets/front.png'
     im = plt.imread(img_path)
     axes[1].imshow(im, extent=[0, 600, 0, 600])
     axes[1].scatter(ch_pos[i_front, 0], ch_pos[i_front, 1], c=c_list[i_front],
@@ -714,7 +714,7 @@ def topo_overlay_roi(values):
     axes[1].axis('off')
 
     # Right
-    img_path = '../../assets/right.png'
+    img_path = '../assets/right.png'
     im = plt.imread(img_path)
     axes[0].imshow(im, extent=[0, 600, 0, 600])
     axes[0].scatter(ch_pos[i_right, 0], ch_pos[i_right, 1], c=c_list[i_right],

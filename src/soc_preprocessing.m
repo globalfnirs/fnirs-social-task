@@ -9,10 +9,9 @@ clear; close all; clc
 
 %% Variables
 currentFile = which(mfilename);
-[currentPath, ~, ~] = fileparts(currentFile);
-pathScripts = fullfile(currentPath, '..', 'signal');
-pathHomer = fullfile(currentPath, '..', '..', '..', 'homer2');
-pathData = fullfile(currentPath, '..', '..', '..', 'data', 'raw', '60mo', 'nirs');
+[pathScripts, ~, ~] = fileparts(currentFile);
+pathHomer = fullfile(pathScripts, '..', '..', 'homer2');
+pathData = fullfile(pathScripts, '..', '..', 'data', 'raw', '60mo', 'nirs');
 
 sf = 10;  % Hz
 
@@ -113,8 +112,7 @@ for nsub = 1:length(sub)
     %% 2- Mark channels based on SCI and cardiac power
     % (SCI < 0.7 & cardiac power < 0.1 uV for more than 70 % of recording with
     % a non-overlapping window of 3 sec)
-    [data.bad_links, data.bad_windows] = BB_sci(data, '', ...
-                                                sci_th, power_th);
+    [data.bad_links, data.bad_windows] = sci(data, '', sci_th, power_th);
     data.SD.MeasListAct(data.bad_links) = 0;
     
     %% 3- Convert to OD
@@ -149,7 +147,7 @@ for nsub = 1:length(sub)
     %% 9- Reject trials based on looking time
     lt_filename = ['../autocoder/' cell2mat(name_split(1)) '_LT_Autocoder.mat'];
     
-    [data.s, data.LTFile] = JB_looking_time(data, lt_filename, percLook);
+    [data.s, data.LTFile] = looking_time(data, lt_filename, percLook);
 
     %% Save processed data
     save(['../processed/', cell2mat(name_split(1)), '.nirs'], '-struct', 'data')

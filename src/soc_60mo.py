@@ -17,7 +17,7 @@ plt.switch_backend('QtAgg')
 # Load data
 # -----------------------------------------------------------------------------
 grand_avg, subj_ids, rejected, _, _ = soc.load_60mo(
-    '../../../data/results/60mo/', ['S', 'V', 'N']
+    '../../data/results/60mo/', ['S', 'V', 'N']
 )
 feature_grand_avg = soc.window_average(grand_avg)
 

@@ -13,7 +13,7 @@ uv pip install matplotlib numpy pandas scipy seaborn statsmodels PyQt6
 ```
 
 **Scripts:**
-1. `fnirs-social-task/src/signal/JB_soc_preprocessing.m` → social task fNIRS preprocessing
-2. `fnirs-social-task/src/social/JB_soc_60mo.py` → detailed social task fNIRS analysis at the 3-5 years age point
-3. `fnirs-social-task/src/social/JB_soc_cross_sectional.py` → social task fNIRS analysis at all the age points from 5 months to 3-5 years old
-4. `fnirs-social-task/src/social/JB_soc_trajectories.py` → study of trajectories with fNIRS on the social task from 5 months to 3-5 years old
+1. `fnirs-social-task/src/soc_preprocessing.m` → social task fNIRS preprocessing
+2. `fnirs-social-task/src/soc_60mo.py` → detailed social task fNIRS analysis at the 3-5 years age point
+3. `fnirs-social-task/src/soc_cross_sectional.py` → social task fNIRS analysis at all the age points from 5 months to 3-5 years old
+4. `fnirs-social-task/src/soc_trajectories.py` → study of trajectories with fNIRS on the social task from 5 months to 3-5 years old

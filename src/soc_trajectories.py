@@ -24,7 +24,7 @@ CONDS = ['V', 'N']
 # Setup
 # -----------------------------------------------------------------------------
 # Get ROI dict
-with open('../../assets/rois.json', 'r') as f:
+with open('../assets/rois.json', 'r') as f:
     roi_json = json.load(f)
 
 # Start channel indices at 0 instead of 1
@@ -42,7 +42,7 @@ roi_list = ['left frontal', 'right frontal',
             'left posterior-temporal', 'right posterior-temporal']
 
 # Get all subject IDs
-with open('../../assets/ids.json', 'r') as f:
+with open('../assets/ids.json', 'r') as f:
     ids_json = json.load(f)
 all_subj_ids = list(ids_json.keys())
 
@@ -61,7 +61,7 @@ for i_age, age in enumerate(AGES):
     print(f'===============\n{age} session\n---------------')
 
     # Load epochs
-    path = f'../../../data/results/{age}/'
+    path = f'../../data/results/{age}/'
     if age == '60mo':
         grand_avg, subj_ids, rejected, _, _ = soc.load_60mo(path, CONDS)
     else:
@@ -268,12 +268,12 @@ print(selectivity_table)
 # -----------------------------------------------------------------------------
 # Mixed GLM of V selectivity with age
 # -----------------------------------------------------------------------------
-with open('../../assets/ids.json', 'r') as f:
+with open('../assets/ids.json', 'r') as f:
     participant_ids = json.load(f)
 participant_ids = {participant_ids[key]: key for key in participant_ids}
-df_bright = pd.read_csv('../../assets/anthrops.csv', index_col=None,
+df_bright = pd.read_csv('../assets/anthrops.csv', index_col=None,
                         delimiter=",")
-df_kids = pd.read_csv('../../assets/anthrops_60mo.csv', index_col=None,
+df_kids = pd.read_csv('../assets/anthrops_60mo.csv', index_col=None,
                       delimiter=",")
 df_anthrop = pd.merge(df_bright, df_kids, on='id', how='outer')
 df_anthrop = df_anthrop.dropna(subset=['id', 'famid'])

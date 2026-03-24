@@ -4,7 +4,7 @@ Authors: Borja Blanco & Luca Pollonini
 --------------------------------------
 %}
 
-function [bad_links, bad_window_inf] = BB_sci(data, path_figures, sci_th, power_th)
+function [bad_links, bad_window_inf] = sci(data, path_figures, sci_th, power_th)
 
 % fcut: 1x2 array [fmin fmax] representing the bandpass of the cardiac pulsation (default [0.5 2.5])
 % window: length in seconds of the window to partition the signal with (defaut: 5)

@@ -26,12 +26,12 @@ CONDS = ['S', 'V', 'N']
 # -----------------------------------------------------------------------------
 # Anthropometrics
 # -----------------------------------------------------------------------------
-with open('../../assets/ids.json', 'r') as f:
+with open('../assets/ids.json', 'r') as f:
     participant_ids = json.load(f)
 participant_ids = {participant_ids[key]: key for key in participant_ids}
-df_bright = pd.read_csv('../../assets/anthrops.csv', index_col=None,
+df_bright = pd.read_csv('../assets/anthrops.csv', index_col=None,
                         delimiter=",")
-df_kids = pd.read_csv('../../assets/anthrops_60mo.csv', index_col=None,
+df_kids = pd.read_csv('../assets/anthrops_60mo.csv', index_col=None,
                       delimiter=",")
 df_anthrop = pd.merge(df_bright, df_kids, on='id', how='outer')
 df_anthrop = df_anthrop.dropna(subset=['id', 'famid'])
@@ -61,7 +61,7 @@ df_anthrop['hb_60mo'] = np.nan
 df_anthrop = df_anthrop[agepoints.values()]
 df_anthrop = df_anthrop.replace({'sex': {0.0: 'Male', 1.0: 'Female'}})
 
-with open('../../assets/ids.json', 'r') as f:
+with open('../assets/ids.json', 'r') as f:
     participant_ids = list(json.load(f).keys())
 
 
@@ -85,7 +85,7 @@ anthrop_table = pd.DataFrame(columns=[
 for i, age in enumerate(AGES):
     print(f'===============\n{age} mo session\n---------------')
     # Load block average data
-    path = f'../../../data/results/{age}mo/'
+    path = f'../../data/results/{age}mo/'
     if age == 60:
         grand_avg, subj_ids, rejected, n_chs, n_trials = soc.load_60mo(
             path, CONDS
@@ -176,7 +176,7 @@ _, fdr_ttp_p_values = multitest.fdrcorrection(ttps_p_values, alpha=0.05)
 print(fdr_ttp_p_values)
 print(trend_values)
 
-anthrop_table.to_csv('../../outputs/social_info.csv', index=False)
+anthrop_table.to_csv('../outputs/social_info.csv', index=False)
 
 
 # -----------------------------------------------------------------------------

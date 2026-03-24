@@ -5,7 +5,7 @@ Author: Johann Benerradi
 %}
 
 %{
-new_s = JB_looking_time(data, lt_filename, perc_look)
+new_s = looking_time(data, lt_filename, perc_look)
 
 Function to annotate stimulus matrix based on looking time, based on a
 provided threshold. Simulus for which the looking time is below threshold
@@ -35,7 +35,7 @@ file_found : int
     found; 0 for not found; -1 for non-matching file.
 %}
 
-function [new_s, file_found] = JB_looking_time(data, lt_filename, perc_look)
+function [new_s, file_found] = looking_time(data, lt_filename, perc_look)
     
     % Copy stim matrix
     new_s = data.s;
