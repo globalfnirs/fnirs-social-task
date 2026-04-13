@@ -85,7 +85,7 @@ anthrop_table = pd.DataFrame(columns=[
 for i, age in enumerate(AGES):
     print(f'===============\n{age} mo session\n---------------')
     # Load block average data
-    path = f'../../data/results/{age}mo/'
+    path = f'../../../data/results/{age}mo/'
     if age == 60:
         grand_avg, subj_ids, rejected, n_chs, n_trials = soc.load_60mo(
             path, CONDS

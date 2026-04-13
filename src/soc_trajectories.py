@@ -61,7 +61,7 @@ for i_age, age in enumerate(AGES):
     print(f'===============\n{age} session\n---------------')
 
     # Load epochs
-    path = f'../../data/results/{age}/'
+    path = f'../../../data/results/{age}/'
     if age == '60mo':
         grand_avg, subj_ids, rejected, _, _ = soc.load_60mo(path, CONDS)
     else:

@@ -11,7 +11,7 @@ clear; close all; clc
 currentFile = which(mfilename);
 [pathScripts, ~, ~] = fileparts(currentFile);
 pathHomer = fullfile(pathScripts, '..', '..', 'homer2');
-pathData = fullfile(pathScripts, '..', '..', 'data', 'raw', '60mo', 'nirs');
+pathData = fullfile(pathScripts, '..', '..', '..', 'data', 'raw', '60mo', 'nirs');
 
 sf = 10;  % Hz
 
