@@ -468,7 +468,7 @@ def analyse_contrast(feature_grand_avg, condition_a, condition_b, fdr=True,
         n_channels, n_chromophores).
 
     condition_a : int
-        Condition index to compared to, from the list provided when loading the
+        Condition index to compare to, from the list provided when loading the
         results.
 
     condition_b : int
