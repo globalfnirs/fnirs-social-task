@@ -222,7 +222,7 @@ for i_age, age in enumerate(AGES):
             df_selectivity.loc[len(df_selectivity)] = [subj, age[:-2], None]
     print(n_spec_v, n_spec_n, n_spec_none)
     rows.append([
-        age, round(n_spec_v/sessions_n[i_age]*100),
+        age[:-2], round(n_spec_v/sessions_n[i_age]*100),
         round(n_spec_n/sessions_n[i_age]*100),
         round(n_spec_none/sessions_n[i_age]*100)
     ])
@@ -239,6 +239,7 @@ ax.legend(bbox_to_anchor=(1.01, 0.5), loc=6, title='Selectivity',
           labels=['Auditory social', 'Auditory non-social', 'Non-selective'])
 ax.set_xlabel('Age (months)')
 ax.set_ylabel('Percentage of participants')
+plt.xticks(rotation=0)
 
 n_patches = sessions_n * 3
 # Annotate the bars

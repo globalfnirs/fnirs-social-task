@@ -182,56 +182,63 @@ anthrop_table.to_csv('../outputs/social_info.csv', index=False)
 # -----------------------------------------------------------------------------
 # Visualise channel HRF
 # -----------------------------------------------------------------------------
-I_CHANNEL = 31
-cond_legend = {'S': 'Visual social',
-               'V': 'Auditory social',
-               'N': 'Auditory non-social'}
+CHANNELS = [31, 2]
+cond_legend = {'V': 'Vocal', 'N': 'Non-vocal'}
 
-custom_colors = ['#FF6347', '#4682B4', '#32CD32', '#FFD700',
-                 '#8A2BE2']
+for channel_idx in CHANNELS:
+    # Create a single figure with subplots for all ages
+    fig, axes = plt.subplots(
+        nrows=1, ncols=len(AGES), figsize=(20, 3), sharey=True
+    )
 
-scale = [-0.4, 1.2]
+    for i, (age, ax) in enumerate(zip(AGES, axes)):
+        # Prepare data for all subjects and conditions
+        data_rows = []
 
+        # Loop through HbO and HbR channels
+        for chroma_idx, chroma in enumerate(['HbO', 'HbR']):
+            for cond in cond_legend:
+                i_cond = CONDS.index(cond)
+                # Get all subject data (not averaged) with time stamps
+                for subj in range(all_grand_avg[i].shape[0]):
+                    time_series = all_grand_avg[i][
+                        subj, i_cond, channel_idx, chroma_idx, :
+                    ]
+                    for t, response in enumerate(time_series):
+                        data_rows.append({
+                            'Hemodynamic response (µM)': response,
+                            'Condition': f"{cond_legend[cond]} ({chroma})",
+                            'Time (sec)': t / 10 - 2,
+                            'Subject': subj
+                        })
+        full_df = pd.DataFrame(data_rows)
 
-for cond in cond_legend:
-    i_cond = CONDS.index(cond)
+        # Plot with standard error bars
+        legend = age == 60
+        p = sns.lineplot(
+            data=full_df, x='Time (sec)', y='Hemodynamic response (µM)',
+            hue='Condition', style='Condition',
+            palette=['indianred', 'indianred', 'royalblue', 'royalblue'],
+            dashes=[(2, 0), (2, 3), (2, 0), (2, 3)], errorbar='se', ax=ax,
+            legend=legend
+        )
+        ax.set_title(f'{int(age)} months', y=1.0)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.spines[["left", "bottom"]].set_position(("data", 0))
+        ax.grid(False)
+        ax.set_xlim(-2, None)
+        ax.set_xlabel('Time (sec)', loc='right', fontsize=12)
+        ax.set_ylabel('Hemodynamic response (µM)', fontsize=12)
+        ax.get_xticklabels()[1].set_visible(False)
 
-    fig, ax = plt.subplots(figsize=(7, 5))
+        # Only show legend on the last subplot
+        if legend:
+            ax.legend(
+                bbox_to_anchor=(1.05, 0.5), loc='center left', ncol=2,
+                bbox_transform=ax.transAxes
+            )
 
-    full_df = pd.DataFrame()
-    for i, age in enumerate(AGES):
-        df = pd.DataFrame({
-            'Hemodynamic response (µM)': np.nanmean(
-                all_grand_avg[i][:, i_cond, I_CHANNEL, 0, :], axis=0
-            ),
-            'Age': f'{age} mo (HbO)'
-        })
-        df['Time (sec)'] = (np.array(df.index) - 20) / 10
-        full_df = pd.concat([full_df, df])
-    p = sns.lineplot(data=full_df, x='Time (sec)',
-                     y='Hemodynamic response (µM)', hue='Age',
-                     palette=sns.color_palette("flare"), ax=ax)
-    p.set(ylim=scale)
-
-    full_df = pd.DataFrame()
-    for i, age in enumerate(AGES):
-        df = pd.DataFrame({
-            'Hemodynamic response (µM)': np.nanmean(
-                all_grand_avg[i][:, i_cond, I_CHANNEL, 1, :], axis=0
-            ),
-            'Age': f'{age} mo (HbR)'
-        })
-        df['Time (sec)'] = (np.array(df.index) - 20) / 10
-        full_df = pd.concat([full_df, df])
-    p = sns.lineplot(data=full_df, x='Time (sec)',
-                     y='Hemodynamic response (µM)', hue='Age',
-                     palette=sns.color_palette("crest"), ax=ax, dashes=(2, 1))
-    p.set(ylim=scale)
-
-    plt.legend(title='Age')
-    plt.title(f'{cond_legend[cond]}')
-    plt.legend(bbox_to_anchor=(1, 1))
-    plt.grid()
+    plt.tight_layout(h_pad=0)
     plt.show()
 
 

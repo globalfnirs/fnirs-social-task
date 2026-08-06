@@ -1016,7 +1016,7 @@ def selective_trajectories(df, subj_list, type, ylim,
         axes.flat[i].set_xlim(0, 45)
         axes.flat[i].set_ylim(*ylim)
         axes.flat[i].set_xlabel("Age at the session (months)")
-        axes.flat[i].set_ylabel("Anterior temporal HbO response (µM)")
+        axes.flat[i].set_ylabel("Anterior temporal response (µM)")
         axes.flat[i].set_xticks(np.arange(0, 45, 10))
         labels = [item.get_text() for item in axes.flat[i].get_xticklabels()]
         labels[-1] = '3-5 y'
